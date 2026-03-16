@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARTA Train Tracker</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #fff;
+            color: #000;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 22px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin-top: 30px;
+            margin-bottom: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 6px 10px;
+            border: 1px solid #000;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        th {
+            background: #000;
+            color: #fff;
+        }
+
+        .line-label {
+            font-weight: bold;
+        }
+
+        .gold { color: #c8960c; }
+        .red { color: #cc0000; }
+        .blue { color: #0055a5; }
+        .green { color: #009544; }
+
+        #clock {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        #status {
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>MARTA Rail - Live Train Positions</h1>
+<div id="clock"></div>
+<div id="status">updating every 3 seconds</div>
+
+<h2 class="gold">Gold Line (Airport ↔ Doraville)</h2>
+<table id="gold-table">
+    <tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>
+</table>
+
+<h2 class="red">Red Line (Airport ↔ North Springs)</h2>
+<table id="red-table">
+    <tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>
+</table>
+
+<h2 class="blue">Blue Line (Hamilton E Holmes ↔ Indian Creek)</h2>
+<table id="blue-table">
+    <tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>
+</table>
+
+<h2 class="green">Green Line (Bankhead ↔ Edgewood/Candler Park)</h2>
+<table id="green-table">
+    <tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>
+</table>
+
+<script>
+let gold_stops = [
+    "Airport",
+    "College Park",
+    "East Point",
+    "Lakewood/Ft. McPherson",
+    "Oakland City",
+    "West End",
+    "Garnett",
+    "Five Points",
+    "Peachtree Center",
+    "Civic Center",
+    "North Avenue",
+    "Midtown",
+    "Arts Center",
+    "Lindbergh Center",
+    "Lenox",
+    "Brookhaven/Oglethorpe",
+    "Chamblee",
+    "Doraville"
+];
+
+let red_stops = [
+    "Airport",
+    "College Park",
+    "East Point",
+    "Lakewood/Ft. McPherson",
+    "Oakland City",
+    "West End",
+    "Garnett",
+    "Five Points",
+    "Peachtree Center",
+    "Civic Center",
+    "North Avenue",
+    "Midtown",
+    "Arts Center",
+    "Lindbergh Center",
+    "Buckhead",
+    "Medical Center",
+    "Dunwoody",
+    "Sandy Springs",
+    "North Springs"
+];
+
+let blue_stops = [
+    "Hamilton E Holmes",
+    "West Lake",
+    "Ashby",
+    "Vine City",
+    "GWCC/CNN Center",
+    "Five Points",
+    "Georgia State",
+    "King Memorial",
+    "Inman Park/Reynoldstown",
+    "Edgewood/Candler Park",
+    "East Lake",
+    "Decatur",
+    "Avondale",
+    "Kensington",
+    "Indian Creek"
+];
+
+let green_stops = [
+    "Bankhead",
+    "Ashby",
+    "Vine City",
+    "GWCC/CNN Center",
+    "Five Points",
+    "Georgia State",
+    "King Memorial",
+    "Inman Park/Reynoldstown",
+    "Edgewood/Candler Park"
+];
+
+let travel_times = {};
+
+function make_travel_time_key(from, to) {
+    return from + " -> " + to;
+}
+
+function seed_travel_times(stops) {
+    for (let i = 0; i < stops.length - 1; i++) {
+        let key_forward = make_travel_time_key(stops[i], stops[i + 1]);
+        let key_backward = make_travel_time_key(stops[i + 1], stops[i]);
+        let minutes = Math.floor(Math.random() * 3) + 2;
+        travel_times[key_forward] = minutes;
+        travel_times[key_backward] = minutes;
+    }
+}
+
+seed_travel_times(gold_stops);
+seed_travel_times(red_stops);
+seed_travel_times(blue_stops);
+seed_travel_times(green_stops);
+
+function get_travel_time(from, to) {
+    let key = make_travel_time_key(from, to);
+    return travel_times[key] || 3;
+}
+
+function make_train(name, line, stops, start_index, direction) {
+    let train = {};
+    train.name = name;
+    train.line = line;
+    train.stops = stops;
+    train.position = start_index;
+    train.direction = direction;
+    train.time_left = 0;
+    train.moving = false;
+    train.dwell_time = 0;
+    return train;
+}
+
+function get_current_stop(train) {
+    return train.stops[train.position];
+}
+
+function get_next_stop(train) {
+    if (train.direction === "forward") {
+        if (train.position < train.stops.length - 1) {
+            return train.stops[train.position + 1];
+        }
+        return train.stops[train.position - 1];
+    } else {
+        if (train.position > 0) {
+            return train.stops[train.position - 1];
+        }
+        return train.stops[train.position + 1];
+    }
+}
+
+function get_direction_label(train) {
+    if (train.direction === "forward") {
+        return "→ " + train.stops[train.stops.length - 1];
+    }
+    return "→ " + train.stops[0];
+}
+
+function advance_train(train) {
+    if (train.dwell_time > 0) {
+        train.dwell_time = train.dwell_time - 1;
+        return;
+    }
+
+    if (!train.moving) {
+        let current = get_current_stop(train);
+        let next = get_next_stop(train);
+        train.time_left = get_travel_time(current, next);
+        train.moving = true;
+        return;
+    }
+
+    if (train.time_left > 0) {
+        train.time_left = train.time_left - 1;
+    }
+
+    if (train.time_left <= 0) {
+        train.moving = false;
+        train.dwell_time = 1;
+
+        if (train.direction === "forward") {
+            if (train.position < train.stops.length - 1) {
+                train.position = train.position + 1;
+            }
+            if (train.position >= train.stops.length - 1) {
+                train.direction = "backward";
+            }
+        } else {
+            if (train.position > 0) {
+                train.position = train.position - 1;
+            }
+            if (train.position <= 0) {
+                train.direction = "forward";
+            }
+        }
+    }
+}
+
+let all_trains = [];
+
+all_trains.push(make_train("G1", "gold", gold_stops, 0, "forward"));
+all_trains.push(make_train("G2", "gold", gold_stops, 6, "forward"));
+all_trains.push(make_train("G3", "gold", gold_stops, 12, "forward"));
+all_trains.push(make_train("G4", "gold", gold_stops, 17, "backward"));
+all_trains.push(make_train("G5", "gold", gold_stops, 9, "backward"));
+all_trains.push(make_train("G6", "gold", gold_stops, 3, "backward"));
+
+all_trains.push(make_train("R1", "red", red_stops, 0, "forward"));
+all_trains.push(make_train("R2", "red", red_stops, 5, "forward"));
+all_trains.push(make_train("R3", "red", red_stops, 10, "forward"));
+all_trains.push(make_train("R4", "red", red_stops, 15, "forward"));
+all_trains.push(make_train("R5", "red", red_stops, 18, "backward"));
+all_trains.push(make_train("R6", "red", red_stops, 13, "backward"));
+all_trains.push(make_train("R7", "red", red_stops, 7, "backward"));
+
+all_trains.push(make_train("B1", "blue", blue_stops, 0, "forward"));
+all_trains.push(make_train("B2", "blue", blue_stops, 5, "forward"));
+all_trains.push(make_train("B3", "blue", blue_stops, 10, "forward"));
+all_trains.push(make_train("B4", "blue", blue_stops, 14, "backward"));
+all_trains.push(make_train("B5", "blue", blue_stops, 8, "backward"));
+all_trains.push(make_train("B6", "blue", blue_stops, 3, "backward"));
+
+all_trains.push(make_train("GR1", "green", green_stops, 0, "forward"));
+all_trains.push(make_train("GR2", "green", green_stops, 3, "forward"));
+all_trains.push(make_train("GR3", "green", green_stops, 6, "forward"));
+all_trains.push(make_train("GR4", "green", green_stops, 8, "backward"));
+all_trains.push(make_train("GR5", "green", green_stops, 5, "backward"));
+
+function build_row(train) {
+    let current = get_current_stop(train);
+    let next = get_next_stop(train);
+    let direction = get_direction_label(train);
+    let eta = "";
+
+    if (train.dwell_time > 0) {
+        eta = "at station";
+    } else if (train.moving) {
+        eta = train.time_left + " min";
+    } else {
+        eta = "departing";
+    }
+
+    let row = "<tr>";
+    row += "<td>" + train.name + "</td>";
+    row += "<td>" + direction + "</td>";
+    row += "<td>" + current + "</td>";
+    row += "<td>" + next + "</td>";
+    row += "<td>" + eta + "</td>";
+    row += "</tr>";
+    return row;
+}
+
+function draw_table(line, table_id) {
+    let table = document.getElementById(table_id);
+    let header = "<tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>";
+    let rows = header;
+
+    for (let i = 0; i < all_trains.length; i++) {
+        let train = all_trains[i];
+        if (train.line === line) {
+            rows += build_row(train);
+        }
+    }
+
+    table.innerHTML = rows;
+}
+
+function update_clock() {
+    let now = new Date();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+    let seconds = now.getSeconds();
+    let period = "AM";
+
+    if (hours >= 12) {
+        period = "PM";
+    }
+    if (hours > 12) {
+        hours = hours - 12;
+    }
+    if (hours === 0) {
+        hours = 12;
+    }
+
+    let time_string = hours + ":" +
+        (minutes < 10 ? "0" : "") + minutes + ":" +
+        (seconds < 10 ? "0" : "") + seconds + " " + period;
+
+    document.getElementById("clock").textContent = time_string;
+}
+
+function tick() {
+    for (let i = 0; i < all_trains.length; i++) {
+        advance_train(all_trains[i]);
+    }
+
+    draw_table("gold", "gold-table");
+    draw_table("red", "red-table");
+    draw_table("blue", "blue-table");
+    draw_table("green", "green-table");
+    update_clock();
+}
+
+tick();
+setInterval(tick, 3000);
+</script>
+
+</body>
+</html>
