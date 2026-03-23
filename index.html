@@ -1,382 +1,298 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MARTA Train Tracker</title>
+    <title>BART Live Train Tracker</title>
     <style>
-        body {
-            font-family: monospace;
-            background: #fff;
-            color: #000;
-            padding: 20px;
-            max-width: 900px;
-            margin: 0 auto;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; background: #111; color: #ccc; min-height: 100vh; }
+
+        #home {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
         }
 
-        h1 {
-            font-size: 22px;
-            border-bottom: 1px solid #000;
-            padding-bottom: 8px;
+        #tracker {
+            display: none;
+            padding: 24px 20px;
         }
 
-        h2 {
-            font-size: 16px;
-            margin-top: 30px;
-            margin-bottom: 6px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-
-        th, td {
-            text-align: left;
-            padding: 6px 10px;
-            border: 1px solid #000;
-            font-family: monospace;
-            font-size: 14px;
-        }
-
-        th {
-            background: #000;
-            color: #fff;
-        }
-
-        .line-label {
-            font-weight: bold;
-        }
-
-        .gold { color: #c8960c; }
-        .red { color: #cc0000; }
-        .blue { color: #0055a5; }
-        .green { color: #009544; }
-
-        #clock {
-            font-size: 14px;
+        .logo {
+            font-size: 12px;
+            color: #555;
+            letter-spacing: 3px;
+            text-transform: uppercase;
             margin-bottom: 10px;
         }
 
-        #status {
+        h1 {
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 60px;
+            text-align: center;
+        }
+
+        .pick-label {
+            color: #666;
             font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             margin-bottom: 20px;
         }
+
+        .line-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 100%;
+            max-width: 340px;
+        }
+
+        .line-btn {
+            padding: 16px 24px;
+            font-family: monospace;
+            font-size: 15px;
+            font-weight: bold;
+            border: 2px solid;
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+            letter-spacing: 1px;
+            transition: opacity 0.15s;
+        }
+
+        .line-btn:hover { opacity: 0.75; }
+
+        .back-btn {
+            background: transparent;
+            border: none;
+            color: #555;
+            font-family: monospace;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            padding: 0;
+        }
+
+        .back-btn:hover { color: #aaa; }
+
+        .tracker-header { margin-bottom: 20px; }
+
+        .tracker-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .clock {
+            font-size: 12px;
+            color: #555;
+            margin-top: 4px;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 7px 10px; color: #555; border-bottom: 1px solid #2a2a2a; font-size: 11px; letter-spacing: 1px; }
+        td { padding: 8px 10px; border-bottom: 1px solid #1e1e1e; font-size: 13px; }
+
+        .station-name { color: #fff; font-weight: bold; }
+        .destination { color: #aaa; }
+        .dir { color: #555; font-size: 11px; }
+        .eta { font-weight: bold; font-size: 14px; }
+        .leaving { color: #ff4444; }
+        .soon { color: #ffaa00; }
+        .normal { color: #44cc44; }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .loading { text-align: center; padding: 60px; color: #444; font-size: 14px; }
+        .no-trains { color: #555; padding: 30px 10px; font-size: 13px; }
     </style>
 </head>
 <body>
 
-<h1>MARTA Rail - Live Train Positions</h1>
-<div id="clock"></div>
-<div id="status">updating every 3 seconds</div>
+    <div id="home">
+        <div class="logo">Bay Area Rapid Transit — California</div>
+        <h1>BART LIVE TRAIN TRACKER</h1>
+        <div class="subtitle">Real-time arrivals — Pacific Time</div>
+        <div class="pick-label">Choose a line</div>
+        <div class="line-buttons">
+            <button class="line-btn" style="color:#FFD700; border-color:#FFD700;" onclick="open_line('YELLOW')">Yellow Line</button>
+            <button class="line-btn" style="color:#ff6600; border-color:#ff6600;" onclick="open_line('ORANGE')">Orange Line</button>
+            <button class="line-btn" style="color:#cc0000; border-color:#cc0000;" onclick="open_line('RED')">Red Line</button>
+            <button class="line-btn" style="color:#339933; border-color:#339933;" onclick="open_line('GREEN')">Green Line</button>
+            <button class="line-btn" style="color:#0066cc; border-color:#0066cc;" onclick="open_line('BLUE')">Blue Line</button>
+            <button class="line-btn" style="color:#cc33cc; border-color:#cc33cc;" onclick="open_line('BEIGE')">Beige Line</button>
+        </div>
+    </div>
 
-<h2 class="gold">Gold Line (Airport ↔ Doraville)</h2>
-<table id="gold-table">
-    <tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>
-</table>
+    <div id="tracker">
+        <button class="back-btn" onclick="go_home()">back to lines</button>
+        <div class="tracker-header">
+            <div class="tracker-title" id="tracker-title"></div>
+            <div class="clock" id="clock"></div>
+        </div>
+        <div id="board"><div class="loading">fetching train data...</div></div>
+    </div>
 
-<h2 class="red">Red Line (Airport ↔ North Springs)</h2>
-<table id="red-table">
-    <tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>
-</table>
+    <script>
+        var api = "https://api.bart.gov/api/etd.aspx?cmd=etd&orig=ALL&key=MW9S-E7SL-26DU-VV8V&json=y"
+        var picked = null
+        var timer = null
 
-<h2 class="blue">Blue Line (Hamilton E Holmes ↔ Indian Creek)</h2>
-<table id="blue-table">
-    <tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>
-</table>
-
-<h2 class="green">Green Line (Bankhead ↔ Edgewood/Candler Park)</h2>
-<table id="green-table">
-    <tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>
-</table>
-
-<script>
-let gold_stops = [
-    "Airport",
-    "College Park",
-    "East Point",
-    "Lakewood/Ft. McPherson",
-    "Oakland City",
-    "West End",
-    "Garnett",
-    "Five Points",
-    "Peachtree Center",
-    "Civic Center",
-    "North Avenue",
-    "Midtown",
-    "Arts Center",
-    "Lindbergh Center",
-    "Lenox",
-    "Brookhaven/Oglethorpe",
-    "Chamblee",
-    "Doraville"
-];
-
-let red_stops = [
-    "Airport",
-    "College Park",
-    "East Point",
-    "Lakewood/Ft. McPherson",
-    "Oakland City",
-    "West End",
-    "Garnett",
-    "Five Points",
-    "Peachtree Center",
-    "Civic Center",
-    "North Avenue",
-    "Midtown",
-    "Arts Center",
-    "Lindbergh Center",
-    "Buckhead",
-    "Medical Center",
-    "Dunwoody",
-    "Sandy Springs",
-    "North Springs"
-];
-
-let blue_stops = [
-    "Hamilton E Holmes",
-    "West Lake",
-    "Ashby",
-    "Vine City",
-    "GWCC/CNN Center",
-    "Five Points",
-    "Georgia State",
-    "King Memorial",
-    "Inman Park/Reynoldstown",
-    "Edgewood/Candler Park",
-    "East Lake",
-    "Decatur",
-    "Avondale",
-    "Kensington",
-    "Indian Creek"
-];
-
-let green_stops = [
-    "Bankhead",
-    "Ashby",
-    "Vine City",
-    "GWCC/CNN Center",
-    "Five Points",
-    "Georgia State",
-    "King Memorial",
-    "Inman Park/Reynoldstown",
-    "Edgewood/Candler Park"
-];
-
-let travel_times = {};
-
-function make_travel_time_key(from, to) {
-    return from + " -> " + to;
-}
-
-function seed_travel_times(stops) {
-    for (let i = 0; i < stops.length - 1; i++) {
-        let key_forward = make_travel_time_key(stops[i], stops[i + 1]);
-        let key_backward = make_travel_time_key(stops[i + 1], stops[i]);
-        let minutes = Math.floor(Math.random() * 3) + 2;
-        travel_times[key_forward] = minutes;
-        travel_times[key_backward] = minutes;
-    }
-}
-
-seed_travel_times(gold_stops);
-seed_travel_times(red_stops);
-seed_travel_times(blue_stops);
-seed_travel_times(green_stops);
-
-function get_travel_time(from, to) {
-    let key = make_travel_time_key(from, to);
-    return travel_times[key] || 3;
-}
-
-function make_train(name, line, stops, start_index, direction) {
-    let train = {};
-    train.name = name;
-    train.line = line;
-    train.stops = stops;
-    train.position = start_index;
-    train.direction = direction;
-    train.time_left = 0;
-    train.moving = false;
-    train.dwell_time = 0;
-    return train;
-}
-
-function get_current_stop(train) {
-    return train.stops[train.position];
-}
-
-function get_next_stop(train) {
-    if (train.direction === "forward") {
-        if (train.position < train.stops.length - 1) {
-            return train.stops[train.position + 1];
+        var line_colors = {
+            YELLOW: "#FFD700",
+            ORANGE: "#ff6600",
+            RED:    "#cc0000",
+            GREEN:  "#339933",
+            BLUE:   "#0066cc",
+            BEIGE:  "#cc33cc"
         }
-        return train.stops[train.position - 1];
-    } else {
-        if (train.position > 0) {
-            return train.stops[train.position - 1];
+
+        var line_names = {
+            YELLOW: "Yellow",
+            ORANGE: "Orange",
+            RED:    "Red",
+            GREEN:  "Green",
+            BLUE:   "Blue",
+            BEIGE:  "Beige"
         }
-        return train.stops[train.position + 1];
-    }
-}
 
-function get_direction_label(train) {
-    if (train.direction === "forward") {
-        return "→ " + train.stops[train.stops.length - 1];
-    }
-    return "→ " + train.stops[0];
-}
-
-function advance_train(train) {
-    if (train.dwell_time > 0) {
-        train.dwell_time = train.dwell_time - 1;
-        return;
-    }
-
-    if (!train.moving) {
-        let current = get_current_stop(train);
-        let next = get_next_stop(train);
-        train.time_left = get_travel_time(current, next);
-        train.moving = true;
-        return;
-    }
-
-    if (train.time_left > 0) {
-        train.time_left = train.time_left - 1;
-    }
-
-    if (train.time_left <= 0) {
-        train.moving = false;
-        train.dwell_time = 1;
-
-        if (train.direction === "forward") {
-            if (train.position < train.stops.length - 1) {
-                train.position = train.position + 1;
-            }
-            if (train.position >= train.stops.length - 1) {
-                train.direction = "backward";
-            }
-        } else {
-            if (train.position > 0) {
-                train.position = train.position - 1;
-            }
-            if (train.position <= 0) {
-                train.direction = "forward";
-            }
+        function pacific_time() {
+            return new Date().toLocaleTimeString("en-US", {
+                timeZone: "America/Los_Angeles",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            })
         }
-    }
-}
 
-let all_trains = [];
+        function open_line(line) {
+            picked = line
+            document.getElementById("home").style.display = "none"
+            document.getElementById("tracker").style.display = "block"
 
-all_trains.push(make_train("G1", "gold", gold_stops, 0, "forward"));
-all_trains.push(make_train("G2", "gold", gold_stops, 6, "forward"));
-all_trains.push(make_train("G3", "gold", gold_stops, 12, "forward"));
-all_trains.push(make_train("G4", "gold", gold_stops, 17, "backward"));
-all_trains.push(make_train("G5", "gold", gold_stops, 9, "backward"));
-all_trains.push(make_train("G6", "gold", gold_stops, 3, "backward"));
+            var color = line_colors[line]
+            var title = document.getElementById("tracker-title")
+            title.style.color = color
+            title.textContent = line_names[line] + " Line — Live Arrivals"
 
-all_trains.push(make_train("R1", "red", red_stops, 0, "forward"));
-all_trains.push(make_train("R2", "red", red_stops, 5, "forward"));
-all_trains.push(make_train("R3", "red", red_stops, 10, "forward"));
-all_trains.push(make_train("R4", "red", red_stops, 15, "forward"));
-all_trains.push(make_train("R5", "red", red_stops, 18, "backward"));
-all_trains.push(make_train("R6", "red", red_stops, 13, "backward"));
-all_trains.push(make_train("R7", "red", red_stops, 7, "backward"));
-
-all_trains.push(make_train("B1", "blue", blue_stops, 0, "forward"));
-all_trains.push(make_train("B2", "blue", blue_stops, 5, "forward"));
-all_trains.push(make_train("B3", "blue", blue_stops, 10, "forward"));
-all_trains.push(make_train("B4", "blue", blue_stops, 14, "backward"));
-all_trains.push(make_train("B5", "blue", blue_stops, 8, "backward"));
-all_trains.push(make_train("B6", "blue", blue_stops, 3, "backward"));
-
-all_trains.push(make_train("GR1", "green", green_stops, 0, "forward"));
-all_trains.push(make_train("GR2", "green", green_stops, 3, "forward"));
-all_trains.push(make_train("GR3", "green", green_stops, 6, "forward"));
-all_trains.push(make_train("GR4", "green", green_stops, 8, "backward"));
-all_trains.push(make_train("GR5", "green", green_stops, 5, "backward"));
-
-function build_row(train) {
-    let current = get_current_stop(train);
-    let next = get_next_stop(train);
-    let direction = get_direction_label(train);
-    let eta = "";
-
-    if (train.dwell_time > 0) {
-        eta = "at station";
-    } else if (train.moving) {
-        eta = train.time_left + " min";
-    } else {
-        eta = "departing";
-    }
-
-    let row = "<tr>";
-    row += "<td>" + train.name + "</td>";
-    row += "<td>" + direction + "</td>";
-    row += "<td>" + current + "</td>";
-    row += "<td>" + next + "</td>";
-    row += "<td>" + eta + "</td>";
-    row += "</tr>";
-    return row;
-}
-
-function draw_table(line, table_id) {
-    let table = document.getElementById(table_id);
-    let header = "<tr><th>Train</th><th>Direction</th><th>Current Stop</th><th>Next Stop</th><th>ETA to Next</th></tr>";
-    let rows = header;
-
-    for (let i = 0; i < all_trains.length; i++) {
-        let train = all_trains[i];
-        if (train.line === line) {
-            rows += build_row(train);
+            grab_data()
+            timer = setInterval(grab_data, 15000)
         }
-    }
 
-    table.innerHTML = rows;
-}
+        function go_home() {
+            picked = null
+            clearInterval(timer)
+            document.getElementById("tracker").style.display = "none"
+            document.getElementById("home").style.display = "flex"
+            document.getElementById("board").innerHTML = '<div class="loading">fetching train data...</div>'
+        }
 
-function update_clock() {
-    let now = new Date();
-    let hours = now.getHours();
-    let minutes = now.getMinutes();
-    let seconds = now.getSeconds();
-    let period = "AM";
+        function eta_class(minutes) {
+            if (minutes === "Leaving") return "leaving"
+            if (parseInt(minutes) <= 3) return "soon"
+            return "normal"
+        }
 
-    if (hours >= 12) {
-        period = "PM";
-    }
-    if (hours > 12) {
-        hours = hours - 12;
-    }
-    if (hours === 0) {
-        hours = 12;
-    }
+        function eta_display(minutes) {
+            if (minutes === "Leaving") return "Leaving now"
+            return minutes + " min"
+        }
 
-    let time_string = hours + ":" +
-        (minutes < 10 ? "0" : "") + minutes + ":" +
-        (seconds < 10 ? "0" : "") + seconds + " " + period;
+        function direction_short(dir) {
+            if (dir === "North") return "N"
+            if (dir === "South") return "S"
+            if (dir === "East") return "E"
+            return "W"
+        }
 
-    document.getElementById("clock").textContent = time_string;
-}
+        function build_row(station, destination, train) {
+            var mins = train.minutes
+            var color = line_colors[picked] || "#ccc"
 
-function tick() {
-    for (let i = 0; i < all_trains.length; i++) {
-        advance_train(all_trains[i]);
-    }
+            var row = "<tr>"
+            row += '<td class="station-name">' + station + '</td>'
+            row += '<td class="destination"><span class="dot" style="background:' + color + '"></span>' + destination + '</td>'
+            row += '<td class="dir">' + direction_short(train.direction) + '</td>'
+            row += '<td class="eta ' + eta_class(mins) + '">' + eta_display(mins) + '</td>'
+            row += "</tr>"
+            return row
+        }
 
-    draw_table("gold", "gold-table");
-    draw_table("red", "red-table");
-    draw_table("blue", "blue-table");
-    draw_table("green", "green-table");
-    update_clock();
-}
+        function draw_board(stops) {
+            var html = "<table>"
+            html += "<tr><th>STATION</th><th>DESTINATION</th><th>DIR</th><th>ETA (PT)</th></tr>"
 
-tick();
-setInterval(tick, 3000);
-</script>
+            if (stops.length === 0) {
+                html += '<tr><td colspan="4" class="no-trains">No active trains on this line right now. Check back shortly.</td></tr>'
+            }
 
+            for (var i = 0; i < stops.length; i++) {
+                var s = stops[i]
+                html += build_row(s.station, s.destination, s.train)
+            }
+
+            html += "</table>"
+            document.getElementById("board").innerHTML = html
+            document.getElementById("clock").textContent = "last updated: " + pacific_time() + " PT — refreshes every 15 sec"
+        }
+
+        function grab_data() {
+            fetch(api)
+                .then(function(res) { return res.json() })
+                .then(function(data) {
+                    var stations = data.root.station
+                    if (!stations) {
+                        document.getElementById("board").innerHTML = '<div class="no-trains">Could not load train data. Try again shortly.</div>'
+                        return
+                    }
+
+                    var stops = []
+
+                    for (var s = 0; s < stations.length; s++) {
+                        var station = stations[s]
+                        var departures = station.etd
+                        if (!departures) continue
+
+                        for (var d = 0; d < departures.length; d++) {
+                            var dest = departures[d]
+                            var estimates = dest.estimate
+                            if (!estimates) continue
+
+                            for (var e = 0; e < estimates.length; e++) {
+                                var train = estimates[e]
+                                if (train.color.toUpperCase() !== picked) continue
+
+                                stops.push({
+                                    station: station.name,
+                                    destination: dest.destination,
+                                    train: train
+                                })
+                            }
+                        }
+                    }
+
+                    stops.sort(function(a, b) {
+                        var a_min = a.train.minutes === "Leaving" ? 0 : parseInt(a.train.minutes)
+                        var b_min = b.train.minutes === "Leaving" ? 0 : parseInt(b.train.minutes)
+                        return a_min - b_min
+                    })
+
+                    draw_board(stops)
+                })
+                .catch(function() {
+                    document.getElementById("board").innerHTML = '<div class="no-trains">Could not reach the BART API. Check your connection and try again.</div>'
+                    document.getElementById("clock").textContent = "last attempted: " + pacific_time() + " PT"
+                })
+        }
+    </script>
 </body>
 </html>
